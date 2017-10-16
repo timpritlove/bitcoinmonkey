@@ -6,7 +6,7 @@
 --- - Zeitliche Parameter zum Eingrenzen der auszugebeden Zeiträume (YYYY-MM-DD)
 --- - Angabe der Ausgabedatei
 
-local csv = require("csv")
+local ftcsv = require("ftcsv")
 local date = require("date")
 local cli = require ("cliargs")
 local requests = require ("requests")
@@ -33,8 +33,8 @@ cli:set_name("BitcoinMonkey")
 cli:set_description("Umwandlung einer Bitcoin Core CSV Exportdatei in MonkeyOffice Buchungen")
 cli:argument("CSVDATEI", "Bitcoin Core CSV Exportdatei")
 cli:option("-w, --waehrung=WAEHRUNG", "Währung", "EUR")
-cli:option("-f, --finanzkonto==KONTO", "Finanzkonto")
-cli:option("-g, --gegenkonto==KONTO", "Gegenkonto")
+cli:option("-f, --finanzkonto=KONTO", "Finanzkonto")
+cli:option("-g, --gegenkonto=KONTO", "Gegenkonto")
 cli:option("-s, --steuersatz=STEUERSATZ", "Steuersatz", "-")
 cli:option("-1, --ks1=KOSTENSTELLE", "Kostenstelle1", "")
 cli:option("-2, --ks2=KOSTENSTELLE", "Kostenstelle2", "")
@@ -72,9 +72,9 @@ local Firma = tostring(args.firma)
 
 -- CSV Datei öffnen und konvertieren
 
-local file = csv.open(args["CSVDATEI"], { header = true })
+local Transaktionen = ftcsv.parse(args["CSVDATEI"], DEL, { header = true })
 
-if file == nil then
+if Transaktionen == nil then
   print (string.format ("Die Datei '%s' kann nicht geöffnet werden", args["CSVDATEI"]))
   os.exit (1)
 end
@@ -86,12 +86,7 @@ print ( "Firma" .. DEL .. "Datum" .. DEL ..
         "Betrag" .. DEL .."Steuersatz" .. DEL ..
         "Kostenstelle1" .. DEL .."Kostenstelle2" .. DEL .. "Notiz" )
 
-Transaktionen = {}
-for line in file:lines() do
-	if line.Confirmed ~= "" then -- Header überspringen
-		table.insert(Transaktionen, line)
-	end
-end
+-- Transaktionen nach Datum sortieren
 
 table.sort(Transaktionen, function (a,b)
 	 return date(a.Date) < date(b.Date)
