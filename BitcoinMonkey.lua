@@ -3,9 +3,8 @@
 -- Umwandlung einer Bitcoin Core CSV Exportdatei in MonkeyOffice Buchungen
 
 --- TODO:
---- - BTC Betrag nach historischem Wechselkurs in Waehrung umwandeln
---- - Fließkommazahlen mit Komma als Dezimaltrenner?
---- - Alle Einträge zu Beginn nach Datum und Zeit sortieren
+--- - Zeitliche Parameter zum Eingrenzen der auszugebeden Zeiträume (YYYY-MM-DD)
+--- - Angabe der Ausgabedatei
 
 local csv = require("csv")
 local date = require("date")
@@ -29,20 +28,6 @@ end
 
 
 -- Command Line Usage
-
--- lua BitconMonkey.lua <OPTIONS> CSVDATEI
---
---    CSVDATEI                Bitcoin Core CSV Exportdatei
---    --bestand BESTAND       Initialer Bestand des BTC-Kontos (default: 0)
---    --finanzkonto FKONTO    Finanzkonto
---    --gegenkonto GKONTO     Gegenkonto
---    --kurse KDATEI          Lookup-Datei für Bitcoin-Kurse
---    --waehrung WAEHRUNG     Währung (default: EUR)
---    --steuersatz STEUER     Steuersatz (default: "-")
---    --ks1 KS1               Kostenstelle1 (default: "")
---    --ks2 KS2               Kostenstelle2 (default: "")
-
-
 
 cli:set_name("BitcoinMonkey")
 cli:set_description("Umwandlung einer Bitcoin Core CSV Exportdatei in MonkeyOffice Buchungen")
@@ -101,14 +86,19 @@ print ( "Firma" .. DEL .. "Datum" .. DEL ..
         "Betrag" .. DEL .."Steuersatz" .. DEL ..
         "Kostenstelle1" .. DEL .."Kostenstelle2" .. DEL .. "Notiz" )
 
-for Transaktion in file:lines() do
+Transaktionen = {}
+for line in file:lines() do
+	if line.Confirmed ~= "" then -- Header überspringen
+		table.insert(Transaktionen, line)
+	end
+end
 
-  --  for i, v in pairs(fields) do
-  --    print(i, v)
-  --    if i == "Date" then
-  --      print(assert(date(v)))
-  --    end
-  --  end
+table.sort(Transaktionen, function (a,b)
+	 return date(a.Date) < date(b.Date)
+end)
+
+
+for n, Transaktion in ipairs(Transaktionen) do
 
   if Transaktion.Confirmed == "true" then
 
@@ -130,7 +120,7 @@ for Transaktion in file:lines() do
     end
     Result, Error = Response.json()
     Wechselkurs = Result.bpi[RequestDate]
-    BetragWaehrung = string.format ("%.2f", Wechselkurs * BetragBTC)
+    BetragWaehrung = string.gsub(string.format ("%.2f", Wechselkurs * BetragBTC), "%.", "," )
 
     if Transaktion.Type == "Received with" then
       Text = string.format("Erwerb: %.8f / Neuer Bestand: %.8f", BetragBTC, BestandBTC)
@@ -138,7 +128,7 @@ for Transaktion in file:lines() do
       Text = string.format("Verkauf: %.8f / Neuer Bestand: %.8f", math.abs(BetragBTC), BestandBTC)
     end
 
-    Notiz = Transaktion.Label
+    Notiz = string.format("CoinBase BPI: %f ( x %f = %f %s / Label: %s", Wechselkurs, BetragBTC,  Wechselkurs * BetragBTC, Waehrung, Transaktion.Label)
 
     print(string.format('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s',
       csvField(Firma), DEL,                 -- Firma
