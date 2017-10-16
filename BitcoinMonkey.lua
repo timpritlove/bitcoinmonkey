@@ -40,6 +40,8 @@ cli:option("-1, --ks1=KOSTENSTELLE", "Kostenstelle1", "")
 cli:option("-2, --ks2=KOSTENSTELLE", "Kostenstelle2", "")
 cli:option("-n, --firma=NR", "Firmennummer", "0")
 cli:option("-b, --bestand=BTC", "Initialer Bestand des BTC-Kontos", "0")
+cli:option("-d, --startdatum=DATE", "Frühestes Datum")
+cli:option("-D, --endedatum=DATE", "Spätestes Datum")
 
 
 -- Kommandozeile parsen und auf Vollständigkeit überprüfen
@@ -67,7 +69,17 @@ local Steuersatz = tostring(args.waehrung)
 local Kostenstelle1 = tostring(args.ks1)
 local Kostenstelle2 = tostring(args.ks2)
 local Firma = tostring(args.firma)
+local StartDatum = nil
+local EndeDatum = nil
 
+
+if args.startdatum then
+  StartDatum = date(tostring(args.startdatum))
+end
+
+if args.endedatum then
+  EndeDatum = date(tostring(args.endedatum))
+end
 
 
 -- CSV Datei öffnen und konvertieren
@@ -95,17 +107,20 @@ end)
 
 for n, Transaktion in ipairs(Transaktionen) do
 
-  if Transaktion.Confirmed == "true" then
+  TransaktionsDatum = date(Transaktion.Date)
 
-    Zeitstempel = date(Transaktion.Date)
-    Datum = string.format ("%02d.%02d.%04d", Zeitstempel:getday(), Zeitstempel:getmonth(), Zeitstempel:getyear())
+  if (not StartDatum or StartDatum <= TransaktionsDatum) and
+     (not EndeDatum or EndeDatum >= TransaktionsDatum) and
+     (Transaktion.Confirmed == "true") then
+
+    Datum = string.format ("%02d.%02d.%04d", TransaktionsDatum:getday(), TransaktionsDatum:getmonth(), TransaktionsDatum:getyear())
 
     BetragBTC = tonumber(Transaktion["Amount (BTC)"])
     BestandBTC = BestandBTC + BetragBTC
 
     -- Historischen Umrechnungskurs erfragen
     
-    RequestDate = string.format ("%04s-%02s-%02s", Zeitstempel:getyear(), Zeitstempel:getmonth(), Zeitstempel:getday())
+    RequestDate = string.format ("%04s-%02s-%02s", TransaktionsDatum:getyear(), TransaktionsDatum:getmonth(), TransaktionsDatum:getday())
     RequestURL = string.format ("https://api.coindesk.com/v1/bpi/historical/close.json?currency=%s&start=%s&end=%s",
                                 Waehrung, RequestDate, RequestDate )
     Response = requests.get(RequestURL)
