@@ -3,7 +3,6 @@
 -- Umwandlung einer Bitcoin Core CSV Exportdatei in MonkeyOffice Buchungen
 
 --- TODO:
---- - Zeitliche Parameter zum Eingrenzen der auszugebeden Zeiträume (YYYY-MM-DD)
 --- - Angabe der Ausgabedatei
 
 local ftcsv = require("ftcsv")
