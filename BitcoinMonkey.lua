@@ -15,7 +15,7 @@ local requests = require ("requests")
 -- Hilfsfunktionen zur String-Behandlung
 --
 
-local DEL = "," -- Delimiter
+local DELIM = "," -- Delimiter
 
 local function csvField (str)
   -- Helper function for quoting delimiter character and escaping double quotes.
@@ -41,6 +41,7 @@ cli:option("-n, --firma=NR", "Firmennummer", "0")
 cli:option("-b, --bestand=BTC", "Initialer Bestand des BTC-Kontos", "0")
 cli:option("-d, --startdatum=DATE", "Frühestes Datum")
 cli:option("-D, --endedatum=DATE", "Spätestes Datum")
+cli:option("-o, --output=OFILE", "Ausgabedatei")
 
 
 -- Kommandozeile parsen und auf Vollständigkeit überprüfen
@@ -83,19 +84,19 @@ end
 
 -- CSV Datei öffnen und konvertieren
 
-local Transaktionen = ftcsv.parse(args["CSVDATEI"], DEL, { header = true })
+local Transaktionen = ftcsv.parse(args["CSVDATEI"], DELIM, { header = true })
 
 if Transaktionen == nil then
   print (string.format ("Die Datei '%s' kann nicht geöffnet werden", args["CSVDATEI"]))
   os.exit (1)
 end
 
-print ( "Firma" .. DEL .. "Datum" .. DEL .. 
-        "BelegNr"  .. DEL .. "Referenz"  .. DEL ..
-        "Waehrung" .. DEL .. "Text" .. DEL ..
-        "KontoSoll" .. DEL .. "KontoHaben" .. DEL ..
-        "Betrag" .. DEL .."Steuersatz" .. DEL ..
-        "Kostenstelle1" .. DEL .."Kostenstelle2" .. DEL .. "Notiz" )
+print ( "Firma" .. DELIM .. "Datum" .. DELIM .. 
+        "BelegNr"  .. DELIM .. "Referenz"  .. DELIM ..
+        "Waehrung" .. DELIM .. "Text" .. DELIM ..
+        "KontoSoll" .. DELIM .. "KontoHaben" .. DELIM ..
+        "Betrag" .. DELIM .."Steuersatz" .. DELIM ..
+        "Kostenstelle1" .. DELIM .."Kostenstelle2" .. DELIM .. "Notiz" )
 
 -- Transaktionen nach Datum sortieren
 
@@ -140,19 +141,19 @@ for n, Transaktion in ipairs(Transaktionen) do
     Notiz = string.format("CoinBase BPI: %f ( x %f = %f %s / Label: %s", Wechselkurs, BetragBTC,  Wechselkurs * BetragBTC, Waehrung, Transaktion.Label)
 
     print(string.format('%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s',
-      csvField(Firma), DEL,                 -- Firma
-      csvField(Datum), DEL,                 -- Datum
-      csvField(Transaktion.ID), DEL,        -- BelegNr
-      csvField(Transaktion.Address), DEL,   -- Referenz
-      csvField(Waehrung), DEL,              -- Währung
-      csvField(Text), DEL,                  -- Text
-      csvField(Finanzkonto), DEL,           -- KontoSoll
-      csvField(Gegenkonto), DEL,            -- KontoHaben
-      csvField(BetragWaehrung), DEL,        -- Betrag
-      csvField(Steuersatz), DEL,            -- Steuersatz
-      csvField(Kostenstelle1), DEL,         -- Kostenstelle1
-      csvField(Kostenstelle2), DEL,         -- Kostenstelle2
-      csvField(Notiz)                       -- Notiz
+      csvField(Firma), DELIM,                 -- Firma
+      csvField(Datum), DELIM,                 -- Datum
+      csvField(Transaktion.ID), DELIM,        -- BelegNr
+      csvField(Transaktion.Address), DELIM,   -- Referenz
+      csvField(Waehrung), DELIM,              -- Währung
+      csvField(Text), DELIM,                  -- Text
+      csvField(Finanzkonto), DELIM,           -- KontoSoll
+      csvField(Gegenkonto), DELIM,            -- KontoHaben
+      csvField(BetragWaehrung), DELIM,        -- Betrag
+      csvField(Steuersatz), DELIM,            -- Steuersatz
+      csvField(Kostenstelle1), DELIM,         -- Kostenstelle1
+      csvField(Kostenstelle2), DELIM,         -- Kostenstelle2
+      csvField(Notiz)                         -- Notiz
     ))
 
 
